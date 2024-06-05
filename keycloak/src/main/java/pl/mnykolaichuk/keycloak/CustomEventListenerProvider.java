@@ -1,0 +1,94 @@
+package pl.mnykolaichuk.keycloak;
+
+import jakarta.jms.MapMessage;
+import org.jboss.logging.Logger;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserModel;
+import org.springframework.jms.core.JmsTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
+
+
+public class CustomEventListenerProvider implements EventListenerProvider {
+
+    private static final Logger log = Logger.getLogger(CustomEventListenerProvider.class);
+
+    private final KeycloakSession session;
+    private final RealmProvider model;
+
+    public CustomEventListenerProvider(KeycloakSession session) {
+        this.session = session;
+        this.model = session.realms();
+    }
+
+    @Override
+    public void onEvent(Event event) {
+
+        if (EventType.REGISTER.equals(event.getType())) {
+            log.infof("## NEW %s EVENT", event.getType());
+            log.info("-----------------------------------------------------------");
+
+            RealmModel realm = this.model.getRealm(event.getRealmId());
+            UserModel newRegisteredUser = this.session.users().getUserById(realm, event.getUserId());
+
+            log.info(newRegisteredUser.getEmail());
+            log.info(newRegisteredUser.getFirstName());
+            log.info(newRegisteredUser.getLastName());
+
+            Map<String, String> clientmap = new HashMap<String, String>();
+            clientmap.put("userId", newRegisteredUser.getId());
+            clientmap.put("email", newRegisteredUser.getEmail());
+            clientmap.put("firstName", newRegisteredUser.getFirstName());
+            clientmap.put("lastName", newRegisteredUser.getLastName());
+
+            Producer.publishEvent("CLIENT_REGISTER", clientmap.toString());
+
+//            jmsTemplate.send("user.registration.queue", session -> {
+//                MapMessage message = session.createMapMessage();
+//                message.setString("email", newRegisteredUser.getEmail());
+//                message.setString("firstName", newRegisteredUser.getFirstName());
+//                message.setString("lastName", newRegisteredUser.getLastName());
+//                return message;
+//            });
+
+//            String emailPlainContent = "New user registration\n\n" +
+//                    "Email: " + newRegisteredUser.getEmail() + "\n" +
+//                    "Username: " + newRegisteredUser.getUsername() + "\n" +
+//                    "Client: " + event.getClientId();
+//
+//            String emailHtmlContent = "<h1>New user registration</h1>" +
+//                    "<ul>" +
+//                    "<li>Email: " + newRegisteredUser.getEmail() + "</li>" +
+//                    "<li>Username: " + newRegisteredUser.getUsername() + "</li>" +
+//                    "<li>Client: " + event.getClientId() + "</li>" +
+//                    "</ul>";
+//
+//            DefaultEmailSenderProvider senderProvider = new DefaultEmailSenderProvider(session);
+//
+//            try {
+//                senderProvider.send(session.getContext().getRealm().getSmtpConfig(), "admin@example.com", "Keycloak - New Registration", emailPlainContent, emailHtmlContent);
+//            } catch (EmailException e) {
+//                log.error("Failed to send email", e);
+//            }
+            log.info("-----------------------------------------------------------");
+        }
+
+    }
+
+    @Override
+    public void onEvent(AdminEvent adminEvent, boolean b) {
+
+    }
+
+    @Override
+    public void close() {
+
+    }
+}

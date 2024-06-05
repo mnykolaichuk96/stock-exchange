@@ -1,0 +1,17 @@
+server:
+  port:8080
+
+spring:
+  application:
+    name: keycloak
+  config:
+    import: "optional:configserver:http://localhost:8071/"
+
+bootstrap: kafka:9092
+#SASL/OAUTHBEARER
+sasl:
+  mechanism: OAUTHBEARER
+OAUTH_TOKEN_ENDPOINT_URI: http://localhost:7080/realms/master/protocol/openid-connect/token
+OAUTH_CLIENT_ID: stock-exchange-auth-code
+#OAUTH_CLIENT_SECRET: 5gJfEJpyaSgQInLb1xySu9ZywzFsa7y9
+

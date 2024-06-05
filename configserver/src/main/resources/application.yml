@@ -1,0 +1,35 @@
+server:
+  port: 8071
+spring:
+  application:
+    name: configserver
+  profiles:
+    active: git # Pliki konfiguracyjne przechowywane na zdalnym repozytorium Git.
+  cloud:
+    config:
+      server:
+        git:
+          uri: "git@github.com:mnykolaichuk96/stock-exchange-config.git"
+          default-label: "main" # Default branch
+          timeout: 5 # Max czas na polaczenie z repo
+          clone-on-start: true # Klonowanie repo przy uruchomieniu serwera
+          force-pull: true # git pull przy kazdym zadanie do Config Servera
+          strict-host-key-checking: false
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  health:
+    readiness-state:
+      enabled: true   # Domyslna realizacja sprawdzenia gotownosci
+    liveness-state:
+      enabled: true   # Domyslna realizacja sprawdzenia stanu zdrowia
+  endpoint:
+    health:
+      probes:
+        enabled: true # Zezwolenie na dostep do endpointow sprawdzenia zdrowia applikacji
+encrypt:
+  key: ${CONFIG_SERVER_KEY}

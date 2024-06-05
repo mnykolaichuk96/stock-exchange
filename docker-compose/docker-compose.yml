@@ -1,0 +1,185 @@
+version: '3.9'
+services:
+  configserver:
+    image: mnykolaichuk/configserver:v2
+    ports:
+      - "8071:8071"
+    healthcheck:
+      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+
+  eurekaserver:
+    image: "mnykolaichuk/eurekaserver:v1"
+    ports:
+      - "8070:8070"
+    healthcheck:
+      test: "curl --fail --silent localhost:8070/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    depends_on:
+      configserver:
+        condition: service_healthy
+    extends:
+      file: common-config.yml
+      service: ms-config
+    environment:
+      SPRING_APPLICATION_NAME: "eurekaserver"
+
+  users-db:
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: users-db
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./mysql-users:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: db-config
+
+  users:
+    image: "mnykolaichuk/users:v1"
+    ports:
+      - "9000:9000"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      users-db:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:9000/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    environment:
+      SPRING_APPLICATION_NAME: "users"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://users-db:3306/users-db"
+    extends:
+      file: common-config.yml
+      service: eureka-client-config
+
+  gatewayserver:
+    image: "mnykolaichuk/gatewayserver:v1"
+    ports:
+      - "8072:8072"
+    extends:
+      file: common-config.yml
+      service: ms-config
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://keycloak:8080/realms/master/protocol/openid-connect/certs"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      users:
+        condition: service_healthy
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+      - "29093:29093"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#      Specifies the addresses that the broker advertises to clients; kafka inside container, localhost - from outside
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092, SSL_HOST://localhost:29093, SSL://kafka:9093
+#      Maps listener names to security protocols. PLAINTEXT - unencrypted, SSL - encrypted
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,SSL_HOST:SSL,SSL:SSL
+#      Setting specifies which listener the Kafka brokers will use to communicate with each other.
+#      PLAINTEXT - unencrypted, SSL - encrypted
+      KAFKA_INTER_BROKER_LISTENER_NAME: SSL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#      For not checking domain name in cert
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_SSL_CLIENT_AUTH: requested
+      KAFKA_SSL_KEYSTORE_FILENAME: "kafka.server.keystore"
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: "creds"
+      KAFKA_SSL_KEY_CREDENTIALS: "creds"
+      KAFKA_SSL_TRUSTSTORE_FILENAME: "kafka.client.truststore"
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "creds"
+    volumes:
+      - ./secrets/server:/etc/kafka/secrets
+      - ./ssl/kafka.server.keystore:/etc/kafka/secrets/kafka.server.keystore
+      - ./ssl/kafka.client.truststore:/etc/kafka/secrets/kafka.client.truststore
+    depends_on:
+      - zookeeper
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+
+  keycloak-db:
+    container_name: keycloak-db
+    image: mysql
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: keycloak
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: password
+    volumes:
+      - ./mysql-keycloak:/var/lib/mysql
+    command:
+      - --datadir=/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: db-config
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: keycloak
+    hostname: keycloak
+    ports:
+      - "7080:8080"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      keycloak-db:
+        condition: service_healthy
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    command: [ "start-dev" ]
+    volumes:
+      - C:\Users\Kolya\OneDrive\Documents\II-Stopien\Praca magisterska\stock-exchange\keycloak\target\keycloak-jar-with-dependencies.jar:/opt/keycloak/providers/keycloak.jar
+      - ./ssl/kafka.client.keystore:/etc/kafka/secrets/kafka.client.keystore
+      - ./ssl/kafka.server.truststore:/etc/kafka/secrets/kafka.server.truststore
+
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+
+
+networks:
+  stock-exchange:
+    driver: "bridge"
+    driver_opts:
+      com.docker.network.enable_tls: "true"
+

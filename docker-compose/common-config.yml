@@ -1,0 +1,27 @@
+services:
+  network-deploy-service:
+    networks:
+      - stock-exchange
+
+  db-config:
+    extends:
+      network-deploy-service
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+
+  ms-config:
+    extends:
+      network-deploy-service
+    environment:
+      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
+
+  eureka-client-config:
+    extends:
+      service:
+        ms-config
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"

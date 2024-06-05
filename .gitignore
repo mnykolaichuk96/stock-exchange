@@ -1,0 +1,4 @@
+*.env
+*.idea
+docker-compose/mysql-keycloak/
+docker-compose/mysql-users/
