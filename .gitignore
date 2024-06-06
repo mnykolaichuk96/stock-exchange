@@ -2,3 +2,6 @@
 *.idea
 docker-compose/mysql-keycloak/
 docker-compose/mysql-users/
+*.mvn
+*/mvnw
+*/target/
