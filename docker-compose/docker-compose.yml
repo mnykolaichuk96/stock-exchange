@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.7'
 services:
   configserver:
     image: mnykolaichuk/configserver:v2
@@ -16,6 +16,8 @@ services:
 
   eurekaserver:
     image: "mnykolaichuk/eurekaserver:v1"
+    container_name: "eurekaserver"
+    hostname: "eurekaserver"
     ports:
       - "8070:8070"
     healthcheck:
@@ -32,6 +34,7 @@ services:
       service: ms-config
     environment:
       SPRING_APPLICATION_NAME: "eurekaserver"
+      EUREKA_INSTANCE_HOSTNAME: "eurekaserver"
 
   users-db:
     image: mysql
@@ -48,12 +51,16 @@ services:
 
   users:
     image: "mnykolaichuk/users:v1"
+    container_name: "users"
+    hostname: "users"
     ports:
       - "9000:9000"
     depends_on:
       configserver:
         condition: service_healthy
       users-db:
+        condition: service_healthy
+      eurekaserver:
         condition: service_healthy
     healthcheck:
       test: "curl --fail --silent localhost:9000/actuator/health/readiness | grep UP || exit 1"
@@ -64,6 +71,12 @@ services:
     environment:
       SPRING_APPLICATION_NAME: "users"
       SPRING_DATASOURCE_URL: "jdbc:mysql://users-db:3306/users-db"
+      SPRING_KAFKA_SSL_TRUST-STORE-LOCATION: /etc/kafka/secrets/truststore.jks
+      CONSUMER_SSL_KEYSTORE-LOCATION: /etc/kafka/secrets/users.keystore.jks
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: http://kafka:9093
+    volumes:
+      - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
+      - ./ssl/ssl-kafka-client-users/users.keystore.jks:/etc/kafka/secrets/users.keystore.jks
     extends:
       file: common-config.yml
       service: eureka-client-config
@@ -98,6 +111,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:latest
+    hostname: kafka
     container_name: kafka
     ports:
       - "9092:9092"
@@ -107,26 +121,28 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-#      Specifies the addresses that the broker advertises to clients; kafka inside container, localhost - from outside
+      #      Specifies the addresses that the broker advertises to clients; kafka inside container, localhost - from outside
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092, SSL_HOST://localhost:29093, SSL://kafka:9093
-#      Maps listener names to security protocols. PLAINTEXT - unencrypted, SSL - encrypted
+      #      Maps listener names to security protocols. PLAINTEXT - unencrypted, SSL - encrypted
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,SSL_HOST:SSL,SSL:SSL
-#      Setting specifies which listener the Kafka brokers will use to communicate with each other.
-#      PLAINTEXT - unencrypted, SSL - encrypted
+      #      Setting specifies which listener the Kafka brokers will use to communicate with each other.
+      #      PLAINTEXT - unencrypted, SSL - encrypted
       KAFKA_INTER_BROKER_LISTENER_NAME: SSL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-#      For not checking domain name in cert
+      #      For not checking domain name in cert
       KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
       KAFKA_SSL_CLIENT_AUTH: requested
-      KAFKA_SSL_KEYSTORE_FILENAME: "kafka.server.keystore"
-      KAFKA_SSL_KEYSTORE_CREDENTIALS: "creds"
-      KAFKA_SSL_KEY_CREDENTIALS: "creds"
-      KAFKA_SSL_TRUSTSTORE_FILENAME: "kafka.client.truststore"
-      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "creds"
+      KAFKA_SSL_KEYSTORE_FILENAME: "kafka.server.keystore.jks"
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: "kafka.server.keystore.credentials"
+      KAFKA_SSL_KEY_CREDENTIALS: "kafka.server.key.credentials"
+      KAFKA_SSL_TRUSTSTORE_FILENAME: "truststore.jks"
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "truststore.credentials"
     volumes:
-      - ./secrets/server:/etc/kafka/secrets
-      - ./ssl/kafka.server.keystore:/etc/kafka/secrets/kafka.server.keystore
-      - ./ssl/kafka.client.truststore:/etc/kafka/secrets/kafka.client.truststore
+      - ./ssl/ssl-kafka-server/kafka.server.keystore.jks:/etc/kafka/secrets/kafka.server.keystore.jks
+      - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
+      - ./ssl/ssl-kafka-server/kafka.server.key.credentials:/etc/kafka/secrets/kafka.server.key.credentials
+      - ./ssl/ssl-kafka-server/kafka.server.keystore.credentials:/etc/kafka/secrets/kafka.server.keystore.credentials
+      - ./ssl/ca/truststore.credentials:/etc/kafka/secrets/truststore.credentials
     depends_on:
       - zookeeper
     extends:
@@ -147,6 +163,12 @@ services:
       - ./mysql-keycloak:/var/lib/mysql
     command:
       - --datadir=/var/lib/mysql
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     extends:
       file: common-config.yml
       service: db-config
@@ -159,23 +181,44 @@ services:
     ports:
       - "7080:8080"
     depends_on:
-      configserver:
-        condition: service_healthy
       keycloak-db:
         condition: service_healthy
     environment:
+      - DB_VENDOR=MYSQL
+      - DB_ADDR=keycloak-db
+      - DB_PORT=3306
+      - DB_DATABASE=keycloak
+      - DB_USER=keycloak
+      - DB_PASSWORD=password
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - OAUTH_CLIENT_SECRET=${KEYCLOAK_OAUTH_CLIENT_SECRET}
+      - OAUTH_CLIENT_ID=${KEYCLOAK_OAUTH_CLIENT_ID}
+      - bootstrap=http://kafka:9093
+      - OAUTH_TOKEN_ENDPOINT_URI=http://keycloak:8080/realms/master/protocol/openid-connect/token
+      - SSL_TRUSTSTORE_LOCATION=/etc/kafka/secrets/truststore.jks
+      - SSL_TRUSTSTORE_PASSWORD=${SSL_TRUSTSTORE_PASSWORD}
+      - SSL_KEYSTORE_LOCATION=/etc/kafka/secrets/keycloak.keystore.jks
+      - SSL_KEYSTORE_PASSWORD=${KEYCLOAK_SSL_KEYSTORE_PASSWORD}
+      - SSL_KEY_PASSWORD=${KEYCLOAK_SSL_KEY_PASSWORD}
     command: [ "start-dev" ]
     volumes:
-      - C:\Users\Kolya\OneDrive\Documents\II-Stopien\Praca magisterska\stock-exchange\keycloak\target\keycloak-jar-with-dependencies.jar:/opt/keycloak/providers/keycloak.jar
-      - ./ssl/kafka.client.keystore:/etc/kafka/secrets/kafka.client.keystore
-      - ./ssl/kafka.server.truststore:/etc/kafka/secrets/kafka.server.truststore
+      - ./realms/:/opt/jboss/keycloak/imports
+      - C:\Users\Kolya\OneDrive\Documents\II-Stopien\PracaMagisterska\stock-exchange\keycloak\target\keycloak-jar-with-dependencies.jar:/opt/keycloak/providers/keycloak.jar
+      - ./ssl/ssl-kafka-client-keycloak/keycloak.keystore.jks:/etc/kafka/secrets/keycloak.keystore.jks
+      - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
 
     extends:
       file: common-config.yml
       service: network-deploy-service
 
+volumes:
+  mysql-keycloak:
+  mysql-users:
+  realms:
+  ssl:
 
 networks:
   stock-exchange:

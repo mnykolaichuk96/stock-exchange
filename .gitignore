@@ -5,3 +5,8 @@ docker-compose/mysql-users/
 *.mvn
 */mvnw
 */target/
+docker-compose/secrets/
+docker-compose/ssl/
+keycloak/client-ssl/
+keycloak/kafka-ssl/
+keycloak/secrets/

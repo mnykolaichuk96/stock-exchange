@@ -18,8 +18,8 @@ spring:
         connect-timeout: 1000
         response-timeout: 2s  # konfiguracja http klienta, ktory sluzy do wymiany zadaniami z ms
 
-#  adres do weryfikacji tokienow jwt otrzymanych od klienta
-  security:
+#  adres do weryfikacji tokienow jwt otrzymanych od klienta. Są pod tym adresem klucze publiczne do weryfikacji
+  security:             # podpisu cyfrowego podpiętego do jwt bez konieczności żądania do keycloak
     oauth2:
       resourceserver:
         jwt:
