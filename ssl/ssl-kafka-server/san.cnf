@@ -1,0 +1,22 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = req_ext
+prompt = no
+
+[req_distinguished_name]
+C = PL
+ST = Rzeszow
+L = Rzeszow
+O = PRz
+OU = Kafka Server Cert MNykolaichuk Mgr
+CN = kafka
+
+[req_ext]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = kafka
+DNS.2 = kafka-1
+DNS.3 = kafka-2
+DNS.4 = kafka-3
+DNS.5 = localhost

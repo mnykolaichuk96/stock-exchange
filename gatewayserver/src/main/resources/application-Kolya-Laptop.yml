@@ -1,0 +1,54 @@
+server:
+  port: 8072
+
+spring:
+  application:
+    name: "gatewayserver"
+  config:
+    import: "optional:configserver:http://localhost:8071/"
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # korzystanie z discovery servera do odkrycia innych ms w systemie rozproszonym
+          lower-case-service-id: true # konwertuje wielkie litery z Eureki na ma?e w service ID
+
+      httpclient:
+        connect-timeout: 1000
+        response-timeout: 2s  # konfiguracja http klienta, ktory sluzy do wymiany zadaniami z ms
+
+#  adres do weryfikacji tokienow jwt otrzymanych od klienta
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: "http://localhost:7080/realms/master/protocol/openid-connect/certs"
+
+eureka:
+  instance:
+    prefer-ip-address: true   # dla komunikacji miedzy soba serwisy beda korzystac z adresow ip zamiast hostow
+  client:
+    fetchRegistry: true   # serwis regularnie pobiera informacje o zarejestrowanych w Eurece serwisach
+    register-with-eureka: true  # rejestruje sie w Eurece po uruchomieniu
+    serviceUrl:
+      defaultZone: http://localhost:8070/eureka/
+    healthcheck:
+      enabled: true   # regularne sprawdzenie zdrowia klienta przez Eureke (status "UP")
+
+management:
+  health:
+    readiness-state:
+      enabled: true   # actuator/health/readiness stan gotownosci (wszystko zainicjowane)
+    liveness-state:
+      enabled: true   # actuator/health/liveness stan zycia (czy nadal dzila poprawnie)
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # dostep do wszystkich endpointow actuatora z zewnatrz
+  endpoint:
+    gateway:
+      enabled: true   # actuator/gateway informacja o bramie API
+  info:
+    env:
+      enabled: true   # actuator/info dostep do zmiennych srodowiskowych

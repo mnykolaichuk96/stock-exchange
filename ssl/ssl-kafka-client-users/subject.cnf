@@ -1,0 +1,19 @@
+[ req ]
+distinguished_name = req_distinguished_name
+req_extensions = req_ext
+prompt = no
+
+[ req_distinguished_name ]
+C = PL
+ST = Rzeszow
+L = Rzeszow
+O = PRz
+OU = Users Service Cert MNykolaichuk Mgr
+CN = users
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = users
+DNS.2 = localhost
