@@ -1,0 +1,59 @@
+server:
+  port: 9010
+
+spring:
+  application:
+    name: "stock"
+  datasource:
+    url: "jdbc:mysql://localhost:3306/stock-db"
+    username: root
+    password: root
+  jpa:
+    show-sql: true
+
+eureka:
+  instance:
+    prefer-ip-address: true   # dla komunikacji miedzy soba serwisy beda korzystac z adresów ip zamiast hostów
+  client:
+    fetchRegistry: true   # serwis regularnie pobiera informacje o zarejestrowanych w Eurece serwisach
+    register-with-eureka: true  # rejestruje sie w Eurece po uruchomieniu
+    serviceUrl:
+      defaultZone: http://localhost:8070/eureka/
+    healthcheck:
+      enabled: true   # regularne sprawdzenie zdrowia klienta przez Eureke (status "UP")
+
+info:
+  app:
+    name: "stock-ms"
+    description: "Stock Exchange Stock Application"
+    version: "1.0.0"
+
+management:
+  health:
+    readiness-state:
+      enabled: true   # actuator/health/readiness stan gotownosci (wszystko zainicjowane)
+    liveness-state:
+      enabled: true   # actuator/health/liveness stan zycia (czy nadal dzila poprawnie)
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # dostep do wszystkich endpointow actuatora z zewnatrz
+  endpoint:
+    shutdown:
+      enabled: true   # actuator/shutdown wylaczenie z endpointa
+    health:
+      probes:
+        enabled: true # dynamiczne monitorowanie i raportowanie stanu zdrowia aplikacji
+  info:
+    env:
+      enabled: true   # actuator/info dostep do zmiennych srodowiskowych
+
+# Properties które mozna zaladowac do zmiennych przy uzyciu @ConfigurationProperties
+stock:
+  message: "Welcome to Stock Exchange"
+  contactDetails:
+    name: "Mykola Nykolaichuk - programmer"
+    email: "150174@stud.prz.edu.pl"
+  onCallSupport:
+    - +48 791-863-388
+    - +38 098-517-95-96

@@ -1,4 +1,4 @@
-package pl.mnykolaichuk.users.service.impl.UserDetail;
+package pl.mnykolaichuk.users.service.impl;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;

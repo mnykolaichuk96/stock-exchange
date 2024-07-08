@@ -38,6 +38,8 @@ services:
 
   users-db:
     image: mysql
+    container_name: "users-db"
+    hostname: "users-db"
     ports:
       - "3306:3306"
     environment:
@@ -45,6 +47,21 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - ./mysql-users:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: db-config
+
+  stock-db:
+    image: mysql
+    container_name: "stock-db"
+    hostname: "stock-db"
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: stock-db
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./mysql-stock:/var/lib/mysql
     extends:
       file: common-config.yml
       service: db-config
@@ -77,6 +94,37 @@ services:
     volumes:
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-client-users/users.keystore.jks:/etc/kafka/secrets/users.keystore.jks
+    extends:
+      file: common-config.yml
+      service: eureka-client-config
+
+  stock:
+    image: "mnykolaichuk/stock:v1"
+    container_name: "stock"
+    hostname: "stock"
+    ports:
+      - "9010:9010"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      stock-db:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:9010/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    environment:
+      SPRING_APPLICATION_NAME: "stock"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://stock-db:3306/stock-db"
+#      SPRING_KAFKA_SSL_TRUST-STORE-LOCATION: /etc/kafka/secrets/truststore.jks
+#      CONSUMER_SSL_KEYSTORE-LOCATION: /etc/kafka/secrets/users.keystore.jks
+#    volumes:
+#      - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
+#      - ./ssl/ssl-kafka-client-users/users.keystore.jks:/etc/kafka/secrets/users.keystore.jks
     extends:
       file: common-config.yml
       service: eureka-client-config
@@ -224,6 +272,7 @@ services:
 volumes:
   mysql-keycloak:
   mysql-users:
+  mysql-stock:
   realms:
   ssl:
 

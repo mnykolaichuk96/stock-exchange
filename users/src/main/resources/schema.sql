@@ -14,5 +14,6 @@ CREATE TABLE IF NOT EXISTS `user_detail` (
 CREATE TABLE IF NOT EXISTS `user_stock` (
     `user_stock_id` int AUTO_INCREMENT  PRIMARY KEY,
     `stock_id` int NOT NULL,
+    FOREIGN KEY (`user_detail_id`) REFERENCES `user_detail`(`user_detail_id`)
     `stock_amount` int NOT NULL
     );
