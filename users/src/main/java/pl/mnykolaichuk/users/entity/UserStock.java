@@ -15,11 +15,10 @@ public class UserStock {
     @Column(name = "stock_amount")
     private Long stockAmount;
 
-    // TODO ForeignKey to stock service stock_id
     @Column(name = "stock_id")
-    private Long stockId;
+    private Long stockId;       //Foreign key to Stock in Stock-MS. Get actual info by FeignClient
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_detail_id")
     private UserDetail userDetail;
 

@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    public static final String USERS = "USERS"; // Stała przechowująca nazwę roli użytkowników.
+    public static final String USERS = "USER"; // Stała przechowująca nazwę roli użytkowników.
 
     /**
      * Metoda konfigurująca łańcuch zabezpieczeń Spring Security dla aplikacji.

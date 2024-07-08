@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "user_detail")
@@ -24,11 +25,13 @@ public class UserDetail extends BaseEntity{
     @Column(name = "last_name")
     private String lastName;
 
-    // TODO ForeignKey to keycloak user_id
+    @Column(name = "email")
+    private String email;
+
     @Column(name = "user_id")
-    private Long userId;
+    private String userId;
 
     @OneToMany(mappedBy = "userDetail", cascade = CascadeType.ALL)
-    private List<UserStock> userStockList;
+    private Set<UserStock> userStocks = new HashSet<>();
 
 }

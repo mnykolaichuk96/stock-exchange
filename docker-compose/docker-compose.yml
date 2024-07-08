@@ -161,8 +161,6 @@ services:
       MYSQL_PASSWORD: password
     volumes:
       - ./mysql-keycloak:/var/lib/mysql
-    command:
-      - --datadir=/var/lib/mysql
     healthcheck:
       test: [ "CMD-SHELL", "mysqladmin ping -h localhost" ]
       interval: 30s
@@ -203,10 +201,19 @@ services:
       - SSL_KEYSTORE_LOCATION=/etc/kafka/secrets/keycloak.keystore.jks
       - SSL_KEYSTORE_PASSWORD=${KEYCLOAK_SSL_KEYSTORE_PASSWORD}
       - SSL_KEY_PASSWORD=${KEYCLOAK_SSL_KEY_PASSWORD}
-    command: [ "start-dev" ]
+#    command: ["start-dev", "--import-realm", "--import-strategy=OVERWRITE_EXISTING"]
+    command:
+      [
+        "start-dev",
+        "-Dkeycloak.migration.action=import",
+        "-Dkeycloak.migration.provider=dir",
+        "-Dkeycloak.migration.dir=/opt/keycloak/data/import/",
+        "-Dkeycloak.migration.strategy=IGNORE_EXISTING",
+      ]
     volumes:
-      - ./realms/:/opt/jboss/keycloak/imports
-      - C:\Users\Kolya\OneDrive\Documents\II-Stopien\PracaMagisterska\stock-exchange\keycloak\target\keycloak-jar-with-dependencies.jar:/opt/keycloak/providers/keycloak.jar
+#       Copy from local realms/realm-export.json inside container
+      - ./realms/:/opt/keycloak/data/import/
+      - C:\Users\Kolya\OneDrive\Projects\stock-exchange\keycloak\target\keycloak-jar-with-dependencies.jar:/opt/keycloak/providers/keycloak.jar
       - ./ssl/ssl-kafka-client-keycloak/keycloak.keystore.jks:/etc/kafka/secrets/keycloak.keystore.jks
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
 

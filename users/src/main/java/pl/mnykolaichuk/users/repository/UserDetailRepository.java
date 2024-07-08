@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository;
 import pl.mnykolaichuk.users.entity.UserDetail;
 
 @Repository
-public interface UserDetailsRepository extends JpaRepository<UserDetail, Long> {
+public interface UserDetailRepository extends JpaRepository<UserDetail, Long> {
 }
