@@ -1,9 +1,10 @@
 package pl.mnykolaichuk.sellOffer.service.impl;
 
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.mnykolaichuk.sellOffer.dto.SellOfferDto;
 import pl.mnykolaichuk.sellOffer.entity.OutboxEvent;
 import pl.mnykolaichuk.sellOffer.entity.SellOffer;
@@ -16,15 +17,13 @@ import pl.mnykolaichuk.sellOffer.service.ISellOfferService;
 @AllArgsConstructor
 public class SellOfferService implements ISellOfferService {
 
-    @Value("${sell-offer.kafka.topic}")
-    private String sellOfferTopic;
-
     private SellOfferRepository sellOfferRepository;
     private OutboxEventRepository outboxEventRepository;
 
     @Override
     @Transactional
     public void addSellOffer(SellOfferDto sellOfferDto) {
+        String sellOfferTopic = "sell-offers";
 
         SellOffer sellOffer = SellOfferMapper.mapToSellOffer(sellOfferDto, new SellOffer());
         sellOfferRepository.save(sellOffer);
