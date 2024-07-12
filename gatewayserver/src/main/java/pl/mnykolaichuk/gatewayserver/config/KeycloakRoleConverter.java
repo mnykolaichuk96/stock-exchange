@@ -1,5 +1,7 @@
 package pl.mnykolaichuk.gatewayserver.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
  */
 public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
 
+    private static final Logger logger = LoggerFactory.getLogger(KeycloakRoleConverter.class);
     /**
      * Metoda konwertująca token JWT na kolekcję przyznanych uprawnień.
      *
@@ -32,6 +35,8 @@ public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedA
         // Jeśli nie ma żadnych przyznanych uprawnień, zwróć pustą kolekcję
         if (realmAccess == null || realmAccess.isEmpty())
             return new ArrayList<>();
+
+        logger.warn("Roles: " + (List<String>) realmAccess.get("roles"));
 
         // Konwersja listy nazw ról na obiekty SimpleGrantedAuthority
         Collection<GrantedAuthority> returnValue = ((List<String>) realmAccess.get("roles"))

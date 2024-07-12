@@ -5,10 +5,12 @@ spring:
   application:
     name: "stock"
   datasource:
-    url: "jdbc:mysql://localhost:3306/stock-db"
+    url: "jdbc:mysql://localhost:3307/stock-db"
     username: root
     password: root
   jpa:
+    hibernate:
+      ddl-auto: update  #  Hibernate оновлює схему бази даних
     show-sql: true
 
 eureka:

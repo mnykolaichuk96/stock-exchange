@@ -1,0 +1,72 @@
+server:
+  port: 9010
+
+spring:
+  application:
+    name: "sellOffer"
+  config:
+    import: "optional:configserver:http://localhost:8071/"
+  datasource:
+    url: "jdbc:mysql://localhost:3306/sellOffer-db"
+    username: root
+    password: root
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update  #  Hibernate ??????? ????? ???? ?????
+  sql:
+    init:
+      mode: always
+
+  kafka:
+    bootstrap-servers: "http://localhost:29092"
+    consumer:
+      group-id: sell-offer-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+eureka:
+  instance:
+    prefer-ip-address: true   # dla komunikacji mi?dzy sob? serwisy b?d? korzysta? z adres�w ip zamiast host�w
+  client:
+    fetchRegistry: true   # serwis regularnie pobiera informacje o zarejestrowanych w Eurece serwisach
+    register-with-eureka: true  # rejestruje si? w Eurece po uruchomieniu
+    serviceUrl:
+      defaultZone: http://localhost:8070/eureka/
+    healthcheck:
+      enabled: true   # regularne sprawdzenie zdrowia klienta przez Eureke (status "UP")
+
+info:
+  app:
+    name: "sell_offer-ms"
+    description: "Sell offer MS for Stock Exchange Users Application"
+    version: "1.0.0"
+
+management:
+  health:
+    readiness-state:
+      enabled: true   # actuator/health/readiness stan gotownosci (wszystko zainicjowane)
+    liveness-state:
+      enabled: true   # actuator/health/liveness stan zycia (czy nadal dzila poprawnie)
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # dostep do wszystkich endpointow actuatora z zewnatrz
+  endpoint:
+    shutdown:
+      enabled: true   # actuator/shutdown wylaczenie z endpointa
+    health:
+      probes:
+        enabled: true # dynamiczne monitorowanie i raportowanie stanu zdrowia aplikacji
+  info:
+    env:
+      enabled: true   # actuator/info dostep do zmiennych srodowiskowych
+
+# Properties kt�re mo?na za?adowa? do zmiennych przy u?yciu @ConfigurationProperties
+sell-offer:
+  kafka:
+    topic: "sell-offers"

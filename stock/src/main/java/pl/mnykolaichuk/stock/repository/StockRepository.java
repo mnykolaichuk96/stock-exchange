@@ -6,4 +6,6 @@ import pl.mnykolaichuk.stock.entity.Stock;
 
 @Repository
 public interface StockRepository extends JpaRepository<Stock, Long> {
+    Stock getStockByStockId(Long stockId);
+    Stock getStockByName(String name);
 }

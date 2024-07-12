@@ -6,7 +6,6 @@ import lombok.*;
 public class StockDto {
     private String name;
     private Long priceId;
-    private Integer avoidAmount;
+    private Integer availableAmount;
 
-    private CompanyDto companyDto;
 }

@@ -20,10 +20,14 @@ public class GatewayConfig {
     @Bean
     public RouteLocator stockExchangeRouteLocator(RouteLocatorBuilder routeLocatorBuilder) {
         return routeLocatorBuilder.routes()
-                .route(route -> route
+                .route("users_route",route -> route
                         .path("/users/**")
                         .filters(path -> path.rewritePath("/users/(?<segment>.*)", "/${segment}"))
                         .uri("lb://USERS"))
+                .route("stock_route", route -> route
+                        .path("/stock/**")
+                        .filters(path -> path.rewritePath("/stock/(?<segment>.*)", "/${segment}"))
+                        .uri("lb://STOCK"))
                 .build();
     }
 

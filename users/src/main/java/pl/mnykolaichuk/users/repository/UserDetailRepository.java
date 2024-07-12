@@ -6,4 +6,5 @@ import pl.mnykolaichuk.users.entity.UserDetail;
 
 @Repository
 public interface UserDetailRepository extends JpaRepository<UserDetail, Long> {
+    UserDetail getUserDetailByUserDetailId(Long userId);
 }

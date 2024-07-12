@@ -1,7 +1,9 @@
 version: '3.7'
 services:
   configserver:
-    image: mnykolaichuk/configserver:v2
+    image: "mnykolaichuk/configserver:v2"
+    container_name: "configserver"
+    hostname: "configserver"
     ports:
       - "8071:8071"
     healthcheck:
@@ -131,6 +133,8 @@ services:
 
   gatewayserver:
     image: "mnykolaichuk/gatewayserver:v1"
+    container_name: "gatewayserver"
+    hostname: "gatewayserver"
     ports:
       - "8072:8072"
     extends:

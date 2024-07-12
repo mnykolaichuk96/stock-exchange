@@ -1,6 +1,7 @@
 package pl.mnykolaichuk.stock.service;
 
 import pl.mnykolaichuk.stock.dto.StockDto;
+import pl.mnykolaichuk.stock.entity.Company;
 
 import java.util.Set;
 
@@ -19,4 +20,12 @@ public interface ICompanyService {
      * @param stockDtos - Set of assigned to company stocks.
      */
     void createCompanyWithStocks(String companyName, Set<StockDto> stockDtos);
+    /**
+     * Getting existing company by its name.
+     *
+     * @param companyName - name of searching company.
+     * @return Company object
+     */
+    Company getCompanyByName(String companyName);
+
 }

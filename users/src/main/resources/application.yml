@@ -12,9 +12,12 @@ spring:
     password: root
   jpa:
     show-sql: true
+    hibernate:
+      ddl-auto: update  #  Hibernate оновлює схему бази даних
   sql:
     init:
       mode: always
+
   kafka:
     bootstrap-servers: "http://localhost:29093"
 

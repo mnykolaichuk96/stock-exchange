@@ -14,7 +14,7 @@ public class UserDetail extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)     // Id generowane przez bd
-    private Long userDetailsId;
+    private Long userDetailId;
 
     @Column(name = "balance")
     private BigDecimal balance;

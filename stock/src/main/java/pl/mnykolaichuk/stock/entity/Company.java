@@ -18,7 +18,7 @@ public class Company {
     @Column(name = "name")
     private String name;
 
-    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
     private Set<Stock> stocks = new HashSet<>();
 
 }

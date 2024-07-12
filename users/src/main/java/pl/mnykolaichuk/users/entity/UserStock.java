@@ -13,7 +13,7 @@ public class UserStock {
     private Long userStockId;
 
     @Column(name = "stock_amount")
-    private Long stockAmount;
+    private Integer stockAmount;
 
     @Column(name = "stock_id")
     private Long stockId;       //Foreign key to Stock in Stock-MS. Get actual info by FeignClient

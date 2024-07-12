@@ -15,7 +15,7 @@ public class StockMapper {
     public static Stock mapToStock(StockDto stockDto, Stock stock){
         stock.setName(stockDto.getName());
         stock.setPriceId(stockDto.getPriceId());
-        stock.setAvoidAmount(stockDto.getAvoidAmount());
+        stock.setAvailableAmount(stockDto.getAvailableAmount());
 
         return stock;
     }
@@ -29,7 +29,7 @@ public class StockMapper {
     public static StockDto mapToStockDto(Stock stock, StockDto stockDto){
         stockDto.setName(stock.getName());
         stockDto.setPriceId(stock.getPriceId());
-        stockDto.setAvoidAmount(stock.getAvoidAmount());
+        stockDto.setAvailableAmount(stock.getAvailableAmount());
 
         return stockDto;
     }

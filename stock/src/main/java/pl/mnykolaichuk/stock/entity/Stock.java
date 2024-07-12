@@ -19,8 +19,8 @@ public class Stock {
     private Long priceId;
 
     // ile zostało dostępnych akcji
-    @Column(name = "avoid_amount")
-    private Integer avoidAmount;
+    @Column(name = "available_amount")
+    private Integer availableAmount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")

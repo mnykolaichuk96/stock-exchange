@@ -21,6 +21,7 @@ import reactor.core.publisher.Mono;
 public class SecurityConfig {
 
     public static final String USERS = "USER"; // Stała przechowująca nazwę roli użytkowników.
+    public static final String ADMIN = "admin";
 
     /**
      * Metoda konfigurująca łańcuch zabezpieczeń Spring Security dla aplikacji.
@@ -31,7 +32,10 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityWebFilterChain(ServerHttpSecurity serverHttpSecurity) {
         serverHttpSecurity.authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/users/**").hasRole(USERS)) // Ustawienie wymaganej roli dla określonej ścieżki.
+                        .pathMatchers("/users/**").hasRole(USERS)
+                        .pathMatchers("/stock/api/company/**").hasRole(ADMIN)
+                        .pathMatchers("/stock/api/stock/**").hasRole(USERS)) // Ustawienie wymaganej roli dla określonej ścieżki.
+
                 .oauth2ResourceServer(oAuth2ResourceServerSpec -> oAuth2ResourceServerSpec
                         .jwt(jwtSpec -> jwtSpec.jwtAuthenticationConverter(grantedAuthoritiesExtractor()))); // Konfiguracja serwera zasobów OAuth 2.0 dla uwierzytelniania za pomocą JWT.
         serverHttpSecurity.csrf(csrfSpec -> csrfSpec.disable()); // Wyłączenie zabezpieczeń CSRF.
