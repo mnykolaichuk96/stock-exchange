@@ -25,6 +25,12 @@ spring:
         jwt:
           jwk-set-uri: "http://localhost:7080/realms/master/protocol/openid-connect/certs"
 
+  kafka:
+    bootstrap-servers: "http://localhost:29092, http://localhost:29094, http://localhost:29096"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
 eureka:
   instance:
     prefer-ip-address: true   # dla komunikacji miedzy soba serwisy beda korzystac z adresow ip zamiast hostow

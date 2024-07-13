@@ -19,7 +19,7 @@ spring:
       mode: always
 
   kafka:
-    bootstrap-servers: "http://localhost:29092"
+    bootstrap-servers: "http://localhost:29092", "http://localhost:29094", "http://localhost:29096"
     consumer:
       group-id: sell-offer-group
       auto-offset-reset: earliest

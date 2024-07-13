@@ -107,7 +107,7 @@ services:
       SPRING_DATASOURCE_URL: "jdbc:mysql://users-db:3306/users-db"
       SPRING_KAFKA_SSL_TRUST-STORE-LOCATION: /etc/kafka/secrets/truststore.jks
       CONSUMER_SSL_KEYSTORE-LOCATION: /etc/kafka/secrets/users.keystore.jks
-      SPRING_KAFKA_BOOTSTRAP-SERVERS: http://kafka:9093
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: http://kafka:9093, http://kafka-2:9095, http://kafka-3:9095
     volumes:
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-client-users/users.keystore.jks:/etc/kafka/secrets/users.keystore.jks
@@ -191,6 +191,7 @@ services:
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://keycloak:8080/realms/master/protocol/openid-connect/certs"
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: http://kafka:9092, http://kafka-2:9094, http://kafka-3:9096
     depends_on:
       configserver:
         condition: service_healthy
@@ -204,7 +205,20 @@ services:
       - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 10
+      ZOOKEEPER_SYNC_LIMIT: 5
+      ZOOKEEPER_MAX_CLIENT_CNXNS: 60
+      ZOOKEEPER_AUTOPURGE_SNAP_RETAIN_COUNT: 3
+      ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: 24
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+#    volumes:
+#      - ./zookeeper-data:/var/lib/zookeeper
     extends:
       file: common-config.yml
       service: network-deploy-service
@@ -241,13 +255,15 @@ services:
       KAFKA_SSL_TRUSTSTORE_FILENAME: "truststore.jks"
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "truststore.credentials"
     volumes:
+#      - ./kafka-data:/var/lib/kafka/data
       - ./ssl/ssl-kafka-server/kafka.server.keystore.jks:/etc/kafka/secrets/kafka.server.keystore.jks
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-server/kafka.server.key.credentials:/etc/kafka/secrets/kafka.server.key.credentials
       - ./ssl/ssl-kafka-server/kafka.server.keystore.credentials:/etc/kafka/secrets/kafka.server.keystore.credentials
       - ./ssl/ca/truststore.credentials:/etc/kafka/secrets/truststore.credentials
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     extends:
       file: common-config.yml
       service: network-deploy-service
@@ -284,13 +300,15 @@ services:
       KAFKA_SSL_TRUSTSTORE_FILENAME: "truststore.jks"
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "truststore.credentials"
     volumes:
+#      - ./kafka-data-2:/var/lib/kafka/data
       - ./ssl/ssl-kafka-server/kafka.server.keystore.jks:/etc/kafka/secrets/kafka.server.keystore.jks
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-server/kafka.server.key.credentials:/etc/kafka/secrets/kafka.server.key.credentials
       - ./ssl/ssl-kafka-server/kafka.server.keystore.credentials:/etc/kafka/secrets/kafka.server.keystore.credentials
       - ./ssl/ca/truststore.credentials:/etc/kafka/secrets/truststore.credentials
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     extends:
       file: common-config.yml
       service: network-deploy-service
@@ -327,13 +345,15 @@ services:
       KAFKA_SSL_TRUSTSTORE_FILENAME: "truststore.jks"
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "truststore.credentials"
     volumes:
+#      - ./kafka-data-3:/var/lib/kafka/data
       - ./ssl/ssl-kafka-server/kafka.server.keystore.jks:/etc/kafka/secrets/kafka.server.keystore.jks
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-server/kafka.server.key.credentials:/etc/kafka/secrets/kafka.server.key.credentials
       - ./ssl/ssl-kafka-server/kafka.server.keystore.credentials:/etc/kafka/secrets/kafka.server.keystore.credentials
       - ./ssl/ca/truststore.credentials:/etc/kafka/secrets/truststore.credentials
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     extends:
       file: common-config.yml
       service: network-deploy-service
@@ -383,7 +403,7 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - OAUTH_CLIENT_SECRET=${KEYCLOAK_OAUTH_CLIENT_SECRET}
       - OAUTH_CLIENT_ID=${KEYCLOAK_OAUTH_CLIENT_ID}
-      - bootstrap=http://kafka:9093
+      - bootstrap=http://kafka:9093, http://kafka:9095, http://kafka:9097
       - OAUTH_TOKEN_ENDPOINT_URI=http://keycloak:8080/realms/master/protocol/openid-connect/token
       - SSL_TRUSTSTORE_LOCATION=/etc/kafka/secrets/truststore.jks
       - SSL_TRUSTSTORE_PASSWORD=${SSL_TRUSTSTORE_PASSWORD}
@@ -416,6 +436,10 @@ volumes:
   mysql-stock:
   realms:
   ssl:
+#  zookeeper-data:
+#  kafka-data:
+#  kafka-data-2:
+#  kafka-data-3:
 
 networks:
   stock-exchange:

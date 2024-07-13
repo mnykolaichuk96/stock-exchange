@@ -1,12 +1,17 @@
 package pl.mnykolaichuk.gatewayserver.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import pl.mnykolaichuk.gatewayserver.kafka.KafkaPublishGatewayFilterFactory;
 
 @Configuration
 public class GatewayConfig {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
 
     /**
      * Bean konfigurujący trasę dla bramy API. Ta metoda definiuje trasę, która przekierowuje wszystkie żądania,
@@ -28,6 +33,11 @@ public class GatewayConfig {
                         .path("/stock/**")
                         .filters(path -> path.rewritePath("/stock/(?<segment>.*)", "/${segment}"))
                         .uri("lb://STOCK"))
+                .route("sell_offer_route", route -> route
+                        .path("/sell-offer/api/sell-offer/create")
+                        .filters(f -> f.filter(new KafkaPublishGatewayFilterFactory(bootstrapServers)
+                                .apply(new KafkaPublishGatewayFilterFactory.Config("sell-offer-to-sell-offer-ms"))))
+                        .uri("no://op"))  // Placeholder URI as the request is not routed to a backend service
                 .build();
     }
 
