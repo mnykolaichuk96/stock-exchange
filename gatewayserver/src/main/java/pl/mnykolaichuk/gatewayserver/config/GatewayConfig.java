@@ -36,7 +36,12 @@ public class GatewayConfig {
                 .route("sell_offer_route", route -> route
                         .path("/sell-offer/api/sell-offer/create")
                         .filters(f -> f.filter(new KafkaPublishGatewayFilterFactory(bootstrapServers)
-                                .apply(new KafkaPublishGatewayFilterFactory.Config("sell-offer-to-sell-offer-ms"))))
+                                .apply(new KafkaPublishGatewayFilterFactory.Config("gateway-to-sell-offer"))))
+                        .uri("no://op"))  // Placeholder URI as the request is not routed to a backend service
+                .route("buy_offer_route", route -> route
+                        .path("/buy-offer/api/buy-offer/create")
+                        .filters(f -> f.filter(new KafkaPublishGatewayFilterFactory(bootstrapServers)
+                                .apply(new KafkaPublishGatewayFilterFactory.Config("gateway-to-buy-offer"))))
                         .uri("no://op"))  // Placeholder URI as the request is not routed to a backend service
                 .build();
     }

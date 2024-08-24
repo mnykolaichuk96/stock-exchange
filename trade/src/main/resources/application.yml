@@ -1,0 +1,138 @@
+server:
+  port: 9040
+
+spring:
+  application:
+    name: "trade"
+  cloud:
+    kafka:
+      bootstrap-servers: "http://localhost:29092, http://localhost:29094, http://localhost:29096"
+    function:
+      definition: processBuyOffers;processSellOffers;processTransactions
+    stream:
+      function:
+        definition: processBuyOffers;processSellOffers;processTransactions
+      bindings:
+        processBuyOffers-in-0:
+          destination: buy-offers
+        processBuyOffers-out-0:
+          destination: buy-offers-store
+
+        processSellOffers-in-0:
+          destination: sell-offers
+        processSellOffers-out-0:
+          destination: sell-offers-store
+
+        processTransactions-in-0:
+          destination: buy-offers-store
+        processTransactions-in-1:
+          destination: sell-offers-store
+        processTransactions-out-0:
+          destination: transactions-topic
+
+      kafka:
+        streams:
+          bindings:
+            processBuyOffers-in-0:
+              consumer:
+                keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
+                valueSerde: org.springframework.kafka.support.serializer.JsonSerde
+                configuration:
+                  spring.json.use.type.headers: false
+                  spring.json.value.default.type: "pl.mnykolaichuk.trade.dto.BuyOfferDto"
+            processBuyOffers-out-0:
+              producer:
+                keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
+                valueSerde: org.springframework.kafka.support.serializer.JsonSerde
+            processSellOffers-in-0:
+              consumer:
+                keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
+                valueSerde: org.springframework.kafka.support.serializer.JsonSerde
+                configuration:
+                  spring.json.use.type.headers: false
+                  spring.json.value.default.type: "pl.mnykolaichuk.trade.dto.SellOfferDto"
+            processSellOffers-out-0:
+              producer:
+                keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
+                valueSerde: org.springframework.kafka.support.serializer.JsonSerde
+            processTransactions-in-1:
+              consumer:
+                keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
+                valueSerde: org.springframework.kafka.support.serializer.JsonSerde
+            processTransactions-out-0:
+              producer:
+                keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
+                valueSerde: org.springframework.kafka.support.serializer.JsonSerde
+          binder:
+            configuration:
+              default.key.serde: org.apache.kafka.common.serialization.Serdes$LongSerde
+              default.value.serde: org.springframework.kafka.support.serializer.JsonSerde
+            functions:
+              processBuyOffers:
+                application-id: buy-offers
+
+              processSellOffers:
+                application-id: sell-offers
+
+              processTransactions:
+                application-id: transactions
+
+        binder:
+          brokers: "http://localhost:29092, http://localhost:29094, http://localhost:29096"
+          auto-create-topics: true
+
+  config:
+    import: "optional:configserver:http://localhost:8071/"
+  datasource:
+    url: "jdbc:mysql://localhost:3306/trade-db"
+    username: root
+    password: root
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update  #  Hibernate ??????? ????? ???? ?????
+  sql:
+    init:
+      mode: always
+
+
+#    streams:
+#      state-dir: /var/lib/kafka-streams/${spring.application.name}${server.port}
+
+eureka:
+  instance:
+    prefer-ip-address: true   # dla komunikacji mi?dzy sob? serwisy b?d? korzysta? z adres�w ip zamiast host�w
+  client:
+    fetchRegistry: true   # serwis regularnie pobiera informacje o zarejestrowanych w Eurece serwisach
+    register-with-eureka: true  # rejestruje si? w Eurece po uruchomieniu
+    serviceUrl:
+      defaultZone: http://localhost:8070/eureka/
+    healthcheck:
+      enabled: true   # regularne sprawdzenie zdrowia klienta przez Eureke (status "UP")
+
+info:
+  app:
+    name: "trade-ms"
+    description: "Trade MS for Stock Exchange Application"
+    version: "1.0.0"
+
+management:
+  health:
+    readiness-state:
+      enabled: true   # actuator/health/readiness stan gotownosci (wszystko zainicjowane)
+    liveness-state:
+      enabled: true   # actuator/health/liveness stan zycia (czy nadal dzila poprawnie)
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # dostep do wszystkich endpointow actuatora z zewnatrz
+  endpoint:
+    shutdown:
+      enabled: true   # actuator/shutdown wylaczenie z endpointa
+    health:
+      probes:
+        enabled: true # dynamiczne monitorowanie i raportowanie stanu zdrowia aplikacji
+  info:
+    env:
+      enabled: true   # actuator/info dostep do zmiennych srodowiskowych
+

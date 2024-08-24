@@ -19,15 +19,15 @@ spring:
       mode: always
 
   kafka:
-    bootstrap-servers: "http://localhost:29092", "http://localhost:29094", "http://localhost:29096"
-    consumer:
-      group-id: sell-offer-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    bootstrap-servers: "http://localhost:29092, http://localhost:29094, http://localhost:29096"
+#    consumer:
+#      group-id: gateway-to-sell-offer
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.apache.kafka.common.serialization.Js
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 eureka:
   instance:
@@ -42,7 +42,7 @@ eureka:
 
 info:
   app:
-    name: "sell_offer-ms"
+    name: "sell-offer-ms"
     description: "Sell offer MS for Stock Exchange Users Application"
     version: "1.0.0"
 

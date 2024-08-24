@@ -1,5 +1,6 @@
 package pl.mnykolaichuk.sellOffer.service.poller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +8,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import pl.mnykolaichuk.sellOffer.dto.SellOfferDto;
 import pl.mnykolaichuk.sellOffer.entity.OutboxEvent;
 import pl.mnykolaichuk.sellOffer.repository.OutboxEventRepository;
 
@@ -16,9 +18,10 @@ import java.util.List;
 @AllArgsConstructor
 public class OutboxPoller {
     private static final Logger logger = LoggerFactory.getLogger(OutboxPoller.class);
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private OutboxEventRepository outboxEventRepository;
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<Long, SellOfferDto> kafkaTemplate;
 
     /**
      * Polls the outbox table every 5 seconds, sends events to Kafka, and removes them from the database.
@@ -35,8 +38,10 @@ public class OutboxPoller {
         } else {
             for (OutboxEvent event: events) {
                 try {
+                    SellOfferDto sellOfferDto = objectMapper.readValue(event.getPayload(), SellOfferDto.class);
+                    logger.info("BuyOffer inside payload of outbox_event table:\n\t" + sellOfferDto);
                     kafkaTemplate.executeInTransaction(operations -> {
-                        operations.send(event.getTopic(), event.getPayload());
+                        operations.send(event.getTopic(), sellOfferDto.getStockId(), sellOfferDto);
                         outboxEventRepository.delete(event); // Usunięcie zdarzenia po wysłaniu
                         return true;
                     });

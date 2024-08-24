@@ -19,15 +19,15 @@ public class SellOfferController {
 
     private SellOfferService sellOfferService;
 
-    @PostMapping("sell-offer/create")
-    public ResponseEntity<ResponseDto> createSellOffer(@RequestBody SellOfferDto sellOfferDto) {
-        sellOfferService.addSellOffer(sellOfferDto);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                ResponseDto.builder()
-                        .statusCode(SellOfferConstants.STATUS_201)
-                        .statusMsg(SellOfferConstants.MESSAGE_201)
-                        .build()
-        );
-    }
+//    @PostMapping("sell-offer/create")
+//    public ResponseEntity<ResponseDto> createSellOffer(@RequestBody SellOfferDto sellOfferDto) {
+//        sellOfferService.addSellOffer(sellOfferDto);
+//
+//        return ResponseEntity.status(HttpStatus.CREATED).body(
+//                ResponseDto.builder()
+//                        .statusCode(SellOfferConstants.STATUS_201)
+//                        .statusMsg(SellOfferConstants.MESSAGE_201)
+//                        .build()
+//        );
+//    }
 }

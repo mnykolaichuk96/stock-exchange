@@ -83,6 +83,36 @@ services:
       file: common-config.yml
       service: db-config
 
+  buy-offer-db:
+    image: mysql
+    container_name: "buy-offer-db"
+    hostname: "buy-offer-db"
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_DATABASE: buy-offer-db
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./mysql-buy-offer:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: db-config
+
+  trade-db:
+    image: mysql
+    container_name: "trade-db"
+    hostname: "trade-db"
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_DATABASE: trade-db
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./mysql-trade:/var/lib/mysql
+    extends:
+      file: common-config.yml
+      service: db-config
+
   users:
     image: "mnykolaichuk/users:v1"
     container_name: "users"
@@ -179,6 +209,73 @@ services:
       file: common-config.yml
       service: eureka-client-config
 
+  buy-offer:
+    image: "mnykolaichuk/buy-offer:v1"
+    container_name: "buy-offer"
+    hostname: "buy-offer"
+    ports:
+      - "9030:9030"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      buy-offer-db:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:9030/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    environment:
+      SERVER_PORT: 9030
+      SPRING_APPLICATION_NAME: "buy-offer"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://buy-offer-db:3306/buy-offer-db"
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: http://kafka:9092, http://kafka-2:9094, http://kafka-3:9096
+    #      SPRING_KAFKA_SSL_TRUST-STORE-LOCATION: /etc/kafka/secrets/truststore.jks
+    #      CONSUMER_SSL_KEYSTORE-LOCATION: /etc/kafka/secrets/users.keystore.jks
+    #    volumes:
+    #      - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
+    #      - ./ssl/ssl-kafka-client-users/users.keystore.jks:/etc/kafka/secrets/users.keystore.jks
+    extends:
+      file: common-config.yml
+      service: eureka-client-config
+
+  trade:
+    image: "mnykolaichuk/trade:v1"
+    container_name: "trade"
+    hostname: "trade"
+    ports:
+      - "9040:9040"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      trade-db:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:9040/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    environment:
+      SERVER_PORT: 9040
+      SPRING_APPLICATION_NAME: "trade"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://trade-db:3306/trade-db"
+      SPRING_KAFKA_BOOTSTRAP-SERVERS: http://kafka:9092, http://kafka-2:9094, http://kafka-3:9096
+      SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: http://kafka:9092, http://kafka-2:9094, http://kafka-3:9096
+    #      SPRING_KAFKA_SSL_TRUST-STORE-LOCATION: /etc/kafka/secrets/truststore.jks
+    #      CONSUMER_SSL_KEYSTORE-LOCATION: /etc/kafka/secrets/users.keystore.jks
+    #    volumes:
+    #      - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
+    #      - ./ssl/ssl-kafka-client-users/users.keystore.jks:/etc/kafka/secrets/users.keystore.jks
+    extends:
+      file: common-config.yml
+      service: eureka-client-config
+
   gatewayserver:
     image: "mnykolaichuk/gatewayserver:v1"
     container_name: "gatewayserver"
@@ -217,8 +314,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-#    volumes:
-#      - ./zookeeper-data:/var/lib/zookeeper
+    volumes:
+      - ./zookeeper-data:/var/lib/zookeeper
     extends:
       file: common-config.yml
       service: network-deploy-service
@@ -236,6 +333,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       #      Specifies the addresses that the broker advertises to clients; kafka inside container, localhost - from outside
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092, PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092, SSL_HOST://localhost:29093, SSL://kafka:9093
       #      Maps listener names to security protocols. PLAINTEXT - unencrypted, SSL - encrypted
@@ -255,7 +353,7 @@ services:
       KAFKA_SSL_TRUSTSTORE_FILENAME: "truststore.jks"
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "truststore.credentials"
     volumes:
-#      - ./kafka-data:/var/lib/kafka/data
+      - ./kafka-data:/var/lib/kafka/data
       - ./ssl/ssl-kafka-server/kafka.server.keystore.jks:/etc/kafka/secrets/kafka.server.keystore.jks
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-server/kafka.server.key.credentials:/etc/kafka/secrets/kafka.server.key.credentials
@@ -281,6 +379,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       #      Specifies the addresses that the broker advertises to clients; kafka inside container, localhost - from outside
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19094, PLAINTEXT://kafka-2:9094,PLAINTEXT_HOST://localhost:29094, SSL_HOST://localhost:29095, SSL://kafka-2:9095
       #      Maps listener names to security protocols. PLAINTEXT - unencrypted, SSL - encrypted
@@ -300,7 +399,7 @@ services:
       KAFKA_SSL_TRUSTSTORE_FILENAME: "truststore.jks"
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "truststore.credentials"
     volumes:
-#      - ./kafka-data-2:/var/lib/kafka/data
+      - ./kafka-data-2:/var/lib/kafka/data
       - ./ssl/ssl-kafka-server/kafka.server.keystore.jks:/etc/kafka/secrets/kafka.server.keystore.jks
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-server/kafka.server.key.credentials:/etc/kafka/secrets/kafka.server.key.credentials
@@ -326,6 +425,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       #      Specifies the addresses that the broker advertises to clients; kafka inside container, localhost - from outside
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19096, PLAINTEXT://kafka-3:9096,PLAINTEXT_HOST://localhost:29096, SSL_HOST://localhost:29097, SSL://kafka-3:9097
       #      Maps listener names to security protocols. PLAINTEXT - unencrypted, SSL - encrypted
@@ -345,7 +445,7 @@ services:
       KAFKA_SSL_TRUSTSTORE_FILENAME: "truststore.jks"
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: "truststore.credentials"
     volumes:
-#      - ./kafka-data-3:/var/lib/kafka/data
+      - ./kafka-data-3:/var/lib/kafka/data
       - ./ssl/ssl-kafka-server/kafka.server.keystore.jks:/etc/kafka/secrets/kafka.server.keystore.jks
       - ./ssl/ca/truststore.jks:/etc/kafka/secrets/truststore.jks
       - ./ssl/ssl-kafka-server/kafka.server.key.credentials:/etc/kafka/secrets/kafka.server.key.credentials
@@ -362,7 +462,7 @@ services:
     container_name: keycloak-db
     image: mysql
     ports:
-      - "3309:3306"
+      - "3305:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: keycloak

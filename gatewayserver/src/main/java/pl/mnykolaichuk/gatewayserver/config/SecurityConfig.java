@@ -35,7 +35,8 @@ public class SecurityConfig {
                         .pathMatchers("/users/**").hasRole(USERS)
                         .pathMatchers("/stock/api/company/**").hasRole(ADMIN)
                         .pathMatchers("/stock/api/stock/**").hasRole(USERS)
-                        .pathMatchers("/sell-offer/api/sell-offer/**").hasRole(USERS)) // Ustawienie wymaganej roli dla określonej ścieżki.
+                        .pathMatchers("/sell-offer/api/sell-offer/**").hasRole(USERS)
+                        .pathMatchers("/buy-offer/api/buy-offer/**").hasRole(USERS)) // Ustawienie wymaganej roli dla określonej ścieżki.
 
                 .oauth2ResourceServer(oAuth2ResourceServerSpec -> oAuth2ResourceServerSpec
                         .jwt(jwtSpec -> jwtSpec.jwtAuthenticationConverter(grantedAuthoritiesExtractor()))); // Konfiguracja serwera zasobów OAuth 2.0 dla uwierzytelniania za pomocą JWT.

@@ -18,6 +18,8 @@ public class SellOfferMapper {
         sellOffer.setStartAmount(sellOfferDto.getStartAmount());
         sellOffer.setAmount(sellOfferDto.getAmount());
         sellOffer.setMinPrice(sellOfferDto.getMinPrice());
+        sellOffer.setActual(sellOfferDto.getActual());
+        sellOffer.setTimestamp(sellOfferDto.getTimestamp());
 
         return sellOffer;
     }
@@ -29,11 +31,14 @@ public class SellOfferMapper {
      * @return sellOfferDto
      */
     public static SellOfferDto mapToSellOfferDto(SellOffer sellOffer, SellOfferDto sellOfferDto) {
+        sellOfferDto.setSellOfferId(sellOffer.getSellOfferId());
         sellOfferDto.setStockId(sellOffer.getStockId());
         sellOfferDto.setUserId(sellOffer.getUserId());
         sellOfferDto.setStartAmount(sellOffer.getStartAmount());
         sellOfferDto.setAmount(sellOffer.getAmount());
         sellOfferDto.setMinPrice(sellOffer.getMinPrice());
+        sellOfferDto.setActual(sellOffer.getActual());
+        sellOfferDto.setTimestamp(sellOffer.getTimestamp());
 
         return sellOfferDto;
     }
